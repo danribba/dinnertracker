@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirect</title>
+  <script>
+    // Omdirigeringslogik för SPA på GitHub Pages eller liknande statisk hosting
+    const pathSegmentsToKeep = 0;
+    const l = window.location;
+    const currentPath = l.pathname.split('/').slice(pathSegmentsToKeep + 1);
+    const redirectTo = `${l.protocol}//${l.hostname}${l.port ? ':' + l.port : ''}${pathSegmentsToKeep ? '/' + l.pathname.split('/').slice(1, pathSegmentsToKeep + 1).join('/') : ''}/?path=${currentPath.join('/')}${l.search ? '&' + l.search.slice(1) : ''}`;
+    sessionStorage.setItem('redirect', redirectTo);
+    window.location.replace(redirectTo);
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html> 

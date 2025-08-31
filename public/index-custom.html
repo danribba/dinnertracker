@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dinner Tracker</title>
+  <meta name="description" content="Keep track of your dinners and friends">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap">
+  <script>
+    // Global blockering av specifika domäner - körs innan sidan ens börjar laddas
+    (function() {
+      // Lista över domäner att blockera
+      const blockedDomains = [
+        'dinnertracker.com',
+        'www.dinnertracker.com',
+        'cloudflare',
+        'cloudflareinsights'
+      ];
+
+      // Patcha XMLHttpRequest
+      const originalXhrOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+        if (typeof url === 'string' && blockedDomains.some(domain => url.includes(domain))) {
+          console.log('Blocked XHR request to:', url);
+          // Returnera en dummy-funktion som inte gör något
+          this.send = function() {};
+          return;
+        }
+        return originalXhrOpen.call(this, method, url, ...rest);
+      };
+      
+      // Patcha fetch
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (typeof url === 'string' && blockedDomains.some(domain => url.includes(domain))) {
+          console.log('Blocked fetch request to:', url);
+          return Promise.resolve(new Response('', { status: 200 }));
+        }
+        return originalFetch.call(this, url, options);
+      };
+      
+      // Blockera script-taggar
+      const originalCreateElement = document.createElement;
+      Document.prototype.createElement = function(tagName) {
+        const element = originalCreateElement.call(this, tagName);
+        if (tagName.toLowerCase() === 'script') {
+          const originalSetAttribute = element.setAttribute;
+          element.setAttribute = function(name, value) {
+            if (name === 'src' && typeof value === 'string' && 
+                blockedDomains.some(domain => value.includes(domain))) {
+              console.log('Blocked script loading from:', value);
+              return;
+            }
+            return originalSetAttribute.call(this, name, value);
+          };
+        }
+        return element;
+      };
+      
+      // Fixa relativt till absolut path för local resurser
+      const fixPath = function(url) {
+        if (!url || typeof url !== 'string') return url;
+        
+        // Om det är en relativ URL som börjar med ./_next, ta bort den inledande punkten
+        if (url.startsWith('./_next')) {
+          return url.substring(1);
+        }
+        return url;
+      };
+      
+      // Patcha alla sätt att ladda resurser
+      const patchResource = function() {
+        // Patcha alla skript-taggar som redan finns
+        document.querySelectorAll('script[src]').forEach(script => {
+          if (script.src) {
+            script.src = fixPath(script.src);
+          }
+        });
+        
+        // Patcha alla länkar
+        document.querySelectorAll('link[href]').forEach(link => {
+          if (link.href) {
+            link.href = fixPath(link.href);
+          }
+        });
+      };
+      
+      // Körs när sidan har laddats
+      window.addEventListener('DOMContentLoaded', patchResource);
+    })();
+    
+    // Hantera SPA-routing för GitHub Pages eller liknande statisk hosting
+    function handleRedirect() {
+      const redirect = sessionStorage.getItem('redirect');
+      if (redirect) {
+        sessionStorage.removeItem('redirect');
+        const url = new URL(redirect);
+        const path = url.searchParams.get('path');
+        if (path) {
+          window.history.replaceState(null, null, path);
+        }
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', handleRedirect);
+  </script>
+  <!-- Inkludera Next.js-skript här (kopiera från genererad index.html) -->
+</head>
+<body class="relative flex w-full min-h-screen flex-col bg-[#FFFFFF] justify-between overflow-x-hidden font-sans">
+  <div id="app">
+    <!-- Innehåll laddas av Next.js -->
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+      <p>Laddar Dinner Tracker...</p>
+    </div>
+  </div>
+  <!-- Lägg till Next.js huvudskript här efter att ha byggt projektet -->
+</body>
+</html> 
